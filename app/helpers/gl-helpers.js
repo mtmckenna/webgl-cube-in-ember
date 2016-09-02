@@ -7,7 +7,7 @@ export function programFromCompiledShadersAndUniformNames(gl, vertexShader, frag
 }
 
 // https://nickdesaulniers.github.io/RawWebGL/#/40
-export function compileShader (gl, type, shaderSrc) {
+export function compileShader(gl, type, shaderSrc) {
   var shader = gl.createShader(type);
   gl.shaderSource(shader, shaderSrc);
   gl.compileShader(shader);
@@ -20,7 +20,7 @@ export function compileShader (gl, type, shaderSrc) {
 }
 
 // https://nickdesaulniers.github.io/RawWebGL/#/41
-export function linkShader (gl, vertexShader, fragmentShader) {
+export function linkShader(gl, vertexShader, fragmentShader) {
   var program = gl.createProgram();
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);

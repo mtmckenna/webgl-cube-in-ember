@@ -8,14 +8,16 @@ import {
   configureBuffer
 } from '../helpers/gl-helpers';
 
-const GRAY = { r: 0.75, g: 0.75, b: 0.75 };
 const ROTATION_SPEED = 0.007;
 const UNIFORM_NAMES = [
   'modelMatrix',
   'viewMatrix',
-  'projectionMatrix'
+  'projectionMatrix',
+  'sampler'
 ];
+
 const VERTICES = new Float32Array([
+  // Back
 	-1.0, -1.0, -1.0,
 	 1.0, -1.0, -1.0,
 	-1.0,  1.0, -1.0,
@@ -23,6 +25,7 @@ const VERTICES = new Float32Array([
 	 1.0, -1.0, -1.0,
 	 1.0,  1.0, -1.0,
 
+   // Front
 	-1.0, -1.0, 1.0,
 	 1.0, -1.0, 1.0,
 	-1.0,  1.0, 1.0,
@@ -30,6 +33,7 @@ const VERTICES = new Float32Array([
 	 1.0, -1.0, 1.0,
 	 1.0,  1.0, 1.0,
 
+  // Right
 	1.0, -1.0, -1.0,
 	1.0, -1.0,  1.0,
 	1.0,  1.0, -1.0,
@@ -37,6 +41,7 @@ const VERTICES = new Float32Array([
 	1.0, -1.0,  1.0,
 	1.0,  1.0,  1.0,
 
+  //Left
 	-1.0, -1.0, -1.0,
 	-1.0, -1.0,  1.0,
 	-1.0,  1.0, -1.0,
@@ -44,6 +49,7 @@ const VERTICES = new Float32Array([
 	-1.0, -1.0,  1.0,
 	-1.0,  1.0,  1.0,
 
+   // Top
 	 1.0, 1.0, -1.0,
 	 1.0, 1.0,  1.0,
 	-1.0, 1.0, -1.0,
@@ -51,12 +57,63 @@ const VERTICES = new Float32Array([
 	-1.0, 1.0,  1.0,
 	-1.0, 1.0, -1.0,
 
+   // Bottom
 	 1.0, -1.0, -1.0,
 	 1.0, -1.0,  1.0,
 	-1.0, -1.0, -1.0,
 	 1.0, -1.0,  1.0,
 	-1.0, -1.0,  1.0,
 	-1.0, -1.0, -1.0,
+]);
+
+const TEX_COORDS = new Float32Array([
+  // Back
+  0.0, 0.0,
+  1.0, 0.0,
+  0.0, 1.0,
+  0.0, 1.0,
+  1.0, -1.0,
+  1.0, 1.0,
+
+  // Front
+  0.0, 0.0,
+  1.0, 0.0,
+  0.0, 1.0,
+  0.0, 1.0,
+  1.0, 0.0,
+  1.0, 1.0,
+
+  // Right
+  0.0, 0.0,
+  0.0, 1.0,
+  1.0, 0.0,
+  1.0, 0.0,
+  0.0, 1.0,
+  1.0, 1.0,
+
+  // Left
+  0.0, 0.0,
+  0.0, 1.0,
+  1.0, 0.0,
+  1.0, 0.0,
+  0.0, 1.0,
+  1.0, 1.0,
+
+  // Top
+  1.0, 0.0,
+  1.0, 1.0,
+  0.0, 0.0,
+  1.0, 1.0,
+  0.0, 1.0,
+  0.0, 0.0,
+
+  // Bottom
+  1.0, 0.0,
+  1.0, 1.0,
+  0.0, 0.0,
+  1.0, 1.0,
+  0.0, 1.0,
+  0.0, 0.0
 ]);
 
 export default Ember.Component.extend({
@@ -88,6 +145,10 @@ export default Ember.Component.extend({
 
   configureVerticesForCube(gl, program, vertices) {
     configureBuffer(gl, program, vertices, 3, 'position');
+  },
+
+  configureTextureMapForCube(gl, program, textureCoordinates) {
+    configureBuffer(gl, program, textureCoordinates, 2, 'texCoord');
   },
 
   gl: Ember.computed(function() {
@@ -124,7 +185,6 @@ export default Ember.Component.extend({
 
   performInitialWebGlSetup() {
     this.configureCanvas();
-    this.animate();
   },
 
   configureCanvas() {
@@ -135,8 +195,27 @@ export default Ember.Component.extend({
     }
   },
 
+  downloadTextureImage(gl) {
+    var image = new Image();
+    var program = this.get('program');
+    image.onload = () => this.handleDownloadedImageForTexture(gl, program, image);
+    image.src = 'ember-logo.png';
+  },
+
+  handleDownloadedImageForTexture(gl, program, image) {
+    var texture = gl.createTexture();
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.uniform1i(program.uniformsCache['sampler'], 0);
+
+    this.animate();
+    //this.draw(this.get('gl'));
+  },
+
   clearGl(gl) {
-    gl.clearColor(GRAY.r, GRAY.g, GRAY.b, 1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.depthFunc(gl.LEQUAL);
@@ -146,13 +225,18 @@ export default Ember.Component.extend({
 
   configureGl(gl) {
     let program = this.get('program');
+    let modelMatrix = this.get('modelMatrix');
     let viewMatrix = this.get('viewMatrix');
     let projectionMatrix = this.get('projectionMatrix');
 
     gl.useProgram(program);
+    gl.uniformMatrix4fv(program.uniformsCache['modelMatrix'], false, modelMatrix);
     gl.uniformMatrix4fv(program.uniformsCache['viewMatrix'], false, viewMatrix);
     gl.uniformMatrix4fv(program.uniformsCache['projectionMatrix'], false, projectionMatrix);
     this.configureVerticesForCube(gl, program, VERTICES);
+
+    this.downloadTextureImage(gl);
+    this.configureTextureMapForCube(gl, program, TEX_COORDS);
   },
 
   _animate() {
