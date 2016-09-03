@@ -1,13 +1,26 @@
 import Ember from 'ember';
-
 import GlMatrix from 'npm:gl-matrix';
+
 import shaders from 'webgl-cube-in-ember/ember-stringify';
+
+import {
+  VERTICES,
+  NUM_VERTICES,
+  TEX_COORDS
+} from './cube-data';
 
 import {
   programFromCompiledShadersAndUniformNames,
   configureBuffer
 } from '../helpers/gl-helpers';
 
+const HEIGHT = 250;
+const WIDTH = 250;
+const ASPECT_RATIO = WIDTH / HEIGHT;
+const CAMERA_DISTANCE = 3.0;
+const NEAR_BOUND = 1.0;
+const FAR_BOUND = 100.0;
+const FOV = 30.0;
 const ROTATION_SPEED = -0.007;
 const UNIFORM_NAMES = [
   'modelMatrix',
@@ -16,140 +29,14 @@ const UNIFORM_NAMES = [
   'sampler'
 ];
 
-const VERTICES = new Float32Array([
-  // Back
-  -1.0, -1.0, -1.0,
-   1.0, -1.0, -1.0,
-  -1.0,  1.0, -1.0,
-  -1.0,  1.0, -1.0,
-   1.0, -1.0, -1.0,
-   1.0,  1.0, -1.0,
-
-  // Front
-  -1.0, -1.0, 1.0,
-   1.0, -1.0, 1.0,
-  -1.0,  1.0, 1.0,
-  -1.0,  1.0, 1.0,
-   1.0, -1.0, 1.0,
-   1.0,  1.0, 1.0,
-
-  // Right
-  1.0, -1.0, -1.0,
-  1.0, -1.0,  1.0,
-  1.0,  1.0, -1.0,
-  1.0,  1.0, -1.0,
-  1.0, -1.0,  1.0,
-  1.0,  1.0,  1.0,
-
-  //Left
-  -1.0, -1.0, -1.0,
-  -1.0, -1.0,  1.0,
-  -1.0,  1.0, -1.0,
-  -1.0,  1.0, -1.0,
-  -1.0, -1.0,  1.0,
-  -1.0,  1.0,  1.0,
-
-  // Top
-   1.0, 1.0, -1.0,
-   1.0, 1.0,  1.0,
-  -1.0, 1.0, -1.0,
-   1.0, 1.0,  1.0,
-  -1.0, 1.0,  1.0,
-  -1.0, 1.0, -1.0,
-
-  // Bottom
-   1.0, -1.0, -1.0,
-   1.0, -1.0,  1.0,
-  -1.0, -1.0, -1.0,
-   1.0, -1.0,  1.0,
-  -1.0, -1.0,  1.0,
-  -1.0, -1.0, -1.0,
-]);
-
-const TEX_COORDS = new Float32Array([
-  // Back
-  1.0, 1.0,
-  0.0, 1.0,
-  1.0, 0.0,
-  1.0, 0.0,
-  0.0, 1.0,
-  0.0, 0.0,
-
-  // Front
-  1.0, 0.0,
-  0.0, 0.0,
-  1.0, 1.0,
-  1.0, 1.0,
-  0.0, 0.0,
-  0.0, 1.0,
-
-  // Right
-  1.0, 0.0,
-  1.0, 1.0,
-  0.0, 0.0,
-  0.0, 0.0,
-  1.0, 1.0,
-  0.0, 1.0,
-
-  // Left
-  1.0, 1.0,
-  1.0, 0.0,
-  0.0, 1.0,
-  0.0, 1.0,
-  1.0, 0.0,
-  0.0, 0.0,
-
-  // Top
-  0.0, 1.0,
-  0.0, 0.0,
-  1.0, 1.0,
-  0.0, 0.0,
-  1.0, 0.0,
-  1.0, 1.0,
-
-  // Bottom
-  0.0, 0.0,
-  0.0, 1.0,
-  1.0, 0.0,
-  0.0, 1.0,
-  1.0, 1.0,
-  1.0, 0.0
-]);
-
 export default Ember.Component.extend({
   tagName: 'canvas',
-  classNames: ['cube-canvas'],
   attributeBindings: ['width', 'height'],
-  width: 250,
-  height: 250,
+  width: WIDTH,
+  height: HEIGHT,
   modelMatrix: GlMatrix.mat4.create(),
   viewMatrix: GlMatrix.mat4.create(),
   projectionMatrix: GlMatrix.mat4.create(),
-
-  init() {
-    this._super(...arguments);
-    this.configureViewMatrix();
-    this.configureProjectionMatrix();
-    this.animate = this._animate.bind(this);
-  },
-
-  configureViewMatrix() {
-    let viewMatrix = this.get('viewMatrix');
-    GlMatrix.mat4.lookAt(viewMatrix, [0.0, 0.0, 3.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
-  },
-
-  configureProjectionMatrix() {
-    let projectionMatrix = this.get('projectionMatrix');
-    GlMatrix.mat4.perspective(projectionMatrix, 30.0, 1.0, 1.0, 100.0);
-  },
-
-  configureVerticesForCube(gl, program, vertices) {
-    configureBuffer(gl, program, vertices, 3, 'position');
-  },
-
-  configureTextureMapForCube(gl, program, textureCoordinates) {
-    configureBuffer(gl, program, textureCoordinates, 2, 'texCoord');
-  },
 
   gl: Ember.computed(function() {
     let canvas = this.get('element');
@@ -175,29 +62,73 @@ export default Ember.Component.extend({
     );
   }),
 
+  init() {
+    this._super(...arguments);
+    this.animate = this._animate.bind(this);
+  },
+
   didInsertElement() {
     Ember.run.scheduleOnce('afterRender', () => {
-      if (this.get('gl')) {
-        this.performInitialWebGlSetup();
-      }
+      let gl = this.get('gl');
+      this.configureGl(gl);
     });
   },
 
-  performInitialWebGlSetup() {
-    this.configureCanvas();
+  configureGl(gl) {
+    this.configureViewMatrix();
+    this.configureProjectionMatrix();
+
+    let program = this.get('program');
+    gl.useProgram(program);
+
+    this.configureUniforms(gl, program);
+    this.configureVerticesForCube(gl, program, VERTICES);
+    this.configureTextureMapForCube(gl, program, TEX_COORDS);
+
+    this.downloadTextureImage(gl);
   },
 
-  configureCanvas() {
-    let gl = this.get('gl');
-    if (gl) {
-      this.clearGl(gl);
-      this.configureGl(gl);
-    }
+  configureViewMatrix() {
+    let viewMatrix = this.get('viewMatrix');
+    GlMatrix.mat4.lookAt(
+      viewMatrix,
+      [0.0, 0.0, CAMERA_DISTANCE],
+      [0.0, 0.0, 0.0],
+      [0.0, 1.0, 0.0]);
+  },
+
+  configureProjectionMatrix() {
+    let projectionMatrix = this.get('projectionMatrix');
+    GlMatrix.mat4.perspective(
+      projectionMatrix,
+      FOV,
+      ASPECT_RATIO,
+      NEAR_BOUND,
+      FAR_BOUND
+    );
+  },
+
+  configureUniforms(gl, program) {
+    let modelMatrix = this.get('modelMatrix');
+    let viewMatrix = this.get('viewMatrix');
+    let projectionMatrix = this.get('projectionMatrix');
+
+    gl.uniformMatrix4fv(program.uniformsCache['modelMatrix'], false, modelMatrix);
+    gl.uniformMatrix4fv(program.uniformsCache['viewMatrix'], false, viewMatrix);
+    gl.uniformMatrix4fv(program.uniformsCache['projectionMatrix'], false, projectionMatrix);
+  },
+
+  configureVerticesForCube(gl, program, vertices) {
+    configureBuffer(gl, program, vertices, 3, 'position');
+  },
+
+  configureTextureMapForCube(gl, program, textureCoordinates) {
+    configureBuffer(gl, program, textureCoordinates, 2, 'texCoord');
   },
 
   downloadTextureImage(gl) {
-    var image = new Image();
-    var program = this.get('program');
+    let image = new Image();
+    let program = this.get('program');
     image.onload = () => this.handleDownloadedImageForTexture(gl, program, image);
     image.src = 'ember-logo.png';
   },
@@ -222,20 +153,13 @@ export default Ember.Component.extend({
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   },
 
-  configureGl(gl) {
-    let program = this.get('program');
+  rotate(gl) {
     let modelMatrix = this.get('modelMatrix');
-    let viewMatrix = this.get('viewMatrix');
-    let projectionMatrix = this.get('projectionMatrix');
-
-    gl.useProgram(program);
+    let program = this.get('program');
+    GlMatrix.mat4.rotateX(modelMatrix, modelMatrix, ROTATION_SPEED);
+    GlMatrix.mat4.rotateY(modelMatrix, modelMatrix, ROTATION_SPEED);
+    GlMatrix.mat4.rotateZ(modelMatrix, modelMatrix, ROTATION_SPEED);
     gl.uniformMatrix4fv(program.uniformsCache['modelMatrix'], false, modelMatrix);
-    gl.uniformMatrix4fv(program.uniformsCache['viewMatrix'], false, viewMatrix);
-    gl.uniformMatrix4fv(program.uniformsCache['projectionMatrix'], false, projectionMatrix);
-    this.configureVerticesForCube(gl, program, VERTICES);
-
-    this.downloadTextureImage(gl);
-    this.configureTextureMapForCube(gl, program, TEX_COORDS);
   },
 
   _animate() {
@@ -246,17 +170,8 @@ export default Ember.Component.extend({
     window.requestAnimationFrame(this.animate);
   },
 
-  rotate(gl) {
-    let modelMatrix = this.get('modelMatrix');
-    let program = this.get('program');
-    GlMatrix.mat4.rotateX(modelMatrix, modelMatrix, ROTATION_SPEED);
-    GlMatrix.mat4.rotateY(modelMatrix, modelMatrix, ROTATION_SPEED);
-    GlMatrix.mat4.rotateZ(modelMatrix, modelMatrix, ROTATION_SPEED);
-    gl.uniformMatrix4fv(program.uniformsCache['modelMatrix'], false, modelMatrix);
-  },
-
   draw(gl) {
     this.clearGl(gl);
-    gl.drawArrays(gl.TRIANGLES, 0, 36);
+    gl.drawArrays(gl.TRIANGLES, 0, NUM_VERTICES);
   }
 });
