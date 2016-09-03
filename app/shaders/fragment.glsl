@@ -2,12 +2,17 @@
 precision mediump float;
 #endif
 
-varying vec3 vColor;
 varying vec2 vTexCoord;
+varying vec3 vNormal;
 
 uniform sampler2D sampler;
+uniform vec3 reverseLightDirection;
 
 void main() {
-  gl_FragColor = texture2D(sampler, vTexCoord);
+  vec3 normal = normalize(vNormal);
+  float light = dot(normal, reverseLightDirection);
+
+  mediump vec4 texelColor = texture2D(sampler, vec2(vTexCoord.s, vTexCoord.t));
+  gl_FragColor = vec4(texelColor.rgb * light, texelColor.a);
 }
 

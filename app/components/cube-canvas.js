@@ -6,7 +6,8 @@ import shaders from 'webgl-cube-in-ember/ember-stringify';
 import {
   VERTICES,
   NUM_VERTICES,
-  TEX_COORDS
+  TEX_COORDS,
+  NORMALS
 } from './cube-data';
 
 import {
@@ -22,11 +23,13 @@ const NEAR_BOUND = 1.0;
 const FAR_BOUND = 100.0;
 const FOV = 30.0;
 const ROTATION_SPEED = -0.007;
+const LIGHT_DIRECTION = [0.5, 0.7, 1.0];
 const UNIFORM_NAMES = [
   'modelMatrix',
   'viewMatrix',
   'projectionMatrix',
-  'sampler'
+  'sampler',
+  'reverseLightDirection'
 ];
 
 export default Ember.Component.extend({
@@ -84,6 +87,7 @@ export default Ember.Component.extend({
     this.configureUniforms(gl, program);
     this.configureVerticesForCube(gl, program, VERTICES);
     this.configureTextureMapForCube(gl, program, TEX_COORDS);
+    this.configureNormalsForCube(gl, program, NORMALS);
 
     this.downloadTextureImage(gl);
   },
@@ -112,10 +116,13 @@ export default Ember.Component.extend({
     let modelMatrix = this.get('modelMatrix');
     let viewMatrix = this.get('viewMatrix');
     let projectionMatrix = this.get('projectionMatrix');
+    let reverseLightDirection = GlMatrix.vec3.create();
+    GlMatrix.vec3.normalize(reverseLightDirection, LIGHT_DIRECTION);
 
     gl.uniformMatrix4fv(program.uniformsCache['modelMatrix'], false, modelMatrix);
     gl.uniformMatrix4fv(program.uniformsCache['viewMatrix'], false, viewMatrix);
     gl.uniformMatrix4fv(program.uniformsCache['projectionMatrix'], false, projectionMatrix);
+    gl.uniform3fv(program.uniformsCache['reverseLightDirection'], reverseLightDirection);
   },
 
   configureVerticesForCube(gl, program, vertices) {
@@ -124,6 +131,10 @@ export default Ember.Component.extend({
 
   configureTextureMapForCube(gl, program, textureCoordinates) {
     configureBuffer(gl, program, textureCoordinates, 2, 'texCoord');
+  },
+
+  configureNormalsForCube(gl, program, normals) {
+    configureBuffer(gl, program, normals, 3, 'normal');
   },
 
   downloadTextureImage(gl) {
