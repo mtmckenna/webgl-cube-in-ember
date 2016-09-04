@@ -54,6 +54,7 @@ export default Ember.Component.extend({
 
   program: Ember.computed(function() {
     let gl = this.get('gl');
+
     let vertexShader = shaders['vertex.glsl'];
     let fragmentShader = shaders['fragment.glsl'];
 
@@ -175,6 +176,7 @@ export default Ember.Component.extend({
 
   _animate() {
     let gl = this.get('gl');
+    if (!gl) { return; }
 
     this.rotate(gl);
     this.draw(gl);

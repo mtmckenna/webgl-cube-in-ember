@@ -12,13 +12,4 @@ test('it renders', function(assert) {
   this.render(hbs`{{cube-canvas}}`);
 
   assert.equal(this.$().text().trim(), '');
-
-  // Template block usage:
-  this.render(hbs`
-    {{#cube-canvas}}
-      template block text
-    {{/cube-canvas}}
-  `);
-
-  assert.equal(this.$().text().trim(), 'template block text');
 });
