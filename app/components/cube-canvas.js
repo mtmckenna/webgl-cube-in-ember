@@ -15,10 +15,7 @@ import {
   configureBuffer
 } from '../helpers/gl-helpers';
 
-const HEIGHT = 250;
-const WIDTH = 250;
-const ASPECT_RATIO = WIDTH / HEIGHT;
-const CAMERA_DISTANCE = 3.0;
+const CAMERA_DISTANCE = 4.0;
 const NEAR_BOUND = 1.0;
 const FAR_BOUND = 100.0;
 const FOV = 30.0;
@@ -33,13 +30,12 @@ const UNIFORM_NAMES = [
 ];
 
 export default Ember.Component.extend({
+  classNames: ['cube-canvas'],
   tagName: 'canvas',
-  attributeBindings: ['width', 'height'],
-  width: WIDTH,
-  height: HEIGHT,
   modelMatrix: GlMatrix.mat4.create(),
   viewMatrix: GlMatrix.mat4.create(),
   projectionMatrix: GlMatrix.mat4.create(),
+  aspectRatio: 1.0,
 
   gl: Ember.computed(function() {
     let canvas = this.get('element');
@@ -107,7 +103,7 @@ export default Ember.Component.extend({
     GlMatrix.mat4.perspective(
       projectionMatrix,
       FOV,
-      ASPECT_RATIO,
+      this.get('aspectRatio'),
       NEAR_BOUND,
       FAR_BOUND
     );
@@ -184,7 +180,34 @@ export default Ember.Component.extend({
   },
 
   draw(gl) {
+    this.resizeCanvas(gl);
     this.clearGl(gl);
     gl.drawArrays(gl.TRIANGLES, 0, NUM_VERTICES);
+  },
+
+  resizeCanvas(gl) {
+    let canvas = gl.canvas;
+
+    if (canvas.clientWidth === canvas.width &&
+        canvas.clientHeight === canvas.height) {
+      return;
+    }
+
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+
+    this.set('aspectRatio', canvas.width / canvas.height);
+
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    this.updateProjectionMatrix(gl);
+  },
+
+  updateProjectionMatrix(gl) {
+    let projectionMatrix = this.get('projectionMatrix');
+    let program = this.get('program');
+
+    this.configureProjectionMatrix();
+    gl.uniformMatrix4fv(program.uniformsCache['projectionMatrix'], false, projectionMatrix);
+
   }
 });
