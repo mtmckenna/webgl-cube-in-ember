@@ -20,7 +20,7 @@ const NEAR_BOUND = 1.0;
 const FAR_BOUND = 100.0;
 const FOV = 30.0;
 const ROTATION_SPEED = -0.007;
-const LIGHT_DIRECTION = [0.5, 0.7, 1.0];
+const LIGHT_DIRECTION = [0.0, 0.0, 1.0];
 const UNIFORM_NAMES = [
   'modelMatrix',
   'viewMatrix',
@@ -36,6 +36,8 @@ export default Ember.Component.extend({
   viewMatrix: GlMatrix.mat4.create(),
   projectionMatrix: GlMatrix.mat4.create(),
   aspectRatio: 1.0,
+  dragPosition: null,
+  mousePosition: { x: 0, y: 0 },
 
   gl: Ember.computed(function() {
     let canvas = this.get('element');
@@ -71,7 +73,30 @@ export default Ember.Component.extend({
     Ember.run.scheduleOnce('afterRender', () => {
       let gl = this.get('gl');
       this.configureGl(gl);
+      this.addEventListeners();
     });
+  },
+
+  willDestroyElement() {
+    this.removeEventListeners();
+  },
+
+  addEventListeners() {
+    this.configureEventListeners();
+    let canvas = this.get('element');
+    canvas.addEventListener('mousemove', this.mouseMoved, false);
+    canvas.addEventListener('mouseup', this.mouseUp, false);
+  },
+
+  removeEventListeners() {
+    let canvas = this.get('element');
+    canvas.removeEventListener('mousemove', this.mouseMoved, false);
+    canvas.removeEventListener('mouseup', this.mouseUp, false);
+  },
+
+  configureEventListeners() {
+    this.set('mouseUp', this._mouseUp.bind(this));
+    this.set('mouseMoved', this._mouseMoved.bind(this));
   },
 
   configureGl(gl) {
@@ -110,15 +135,15 @@ export default Ember.Component.extend({
   },
 
   configureUniforms(gl, program) {
-    let modelMatrix = this.get('modelMatrix');
-    let viewMatrix = this.get('viewMatrix');
-    let projectionMatrix = this.get('projectionMatrix');
+    this.configureLightDirection(gl, program);
+    this.updateModelMatrix();
+    this.updateViewMatrix();
+    this.updateProjectionMatrix();
+  },
+
+  configureLightDirection(gl, program) {
     let reverseLightDirection = GlMatrix.vec3.create();
     GlMatrix.vec3.normalize(reverseLightDirection, LIGHT_DIRECTION);
-
-    gl.uniformMatrix4fv(program.uniformsCache['modelMatrix'], false, modelMatrix);
-    gl.uniformMatrix4fv(program.uniformsCache['viewMatrix'], false, viewMatrix);
-    gl.uniformMatrix4fv(program.uniformsCache['projectionMatrix'], false, projectionMatrix);
     gl.uniform3fv(program.uniformsCache['reverseLightDirection'], reverseLightDirection);
   },
 
@@ -161,13 +186,12 @@ export default Ember.Component.extend({
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   },
 
-  rotate(gl) {
+  rotate() {
     let modelMatrix = this.get('modelMatrix');
-    let program = this.get('program');
     GlMatrix.mat4.rotateX(modelMatrix, modelMatrix, ROTATION_SPEED);
     GlMatrix.mat4.rotateY(modelMatrix, modelMatrix, ROTATION_SPEED);
     GlMatrix.mat4.rotateZ(modelMatrix, modelMatrix, ROTATION_SPEED);
-    gl.uniformMatrix4fv(program.uniformsCache['modelMatrix'], false, modelMatrix);
+    this.updateModelMatrix();
   },
 
   _animate() {
@@ -199,15 +223,71 @@ export default Ember.Component.extend({
     this.set('aspectRatio', canvas.width / canvas.height);
 
     gl.viewport(0, 0, canvas.width, canvas.height);
-    this.updateProjectionMatrix(gl);
+    this.updateProjectionMatrix();
   },
 
-  updateProjectionMatrix(gl) {
+  updateModelMatrix() {
+    let gl = this.get('gl');
+    let program = this.get('program');
+    let modelMatrix = this.get('modelMatrix');
+    gl.uniformMatrix4fv(program.uniformsCache['modelMatrix'], false, modelMatrix);
+  },
+
+  updateViewMatrix() {
+    let gl = this.get('gl');
+    let program = this.get('program');
+    let viewMatrix = this.get('viewMatrix');
+    gl.uniformMatrix4fv(program.uniformsCache['viewMatrix'], false, viewMatrix);
+  },
+
+  updateProjectionMatrix() {
+    let gl = this.get('gl');
     let projectionMatrix = this.get('projectionMatrix');
     let program = this.get('program');
 
     this.configureProjectionMatrix();
     gl.uniformMatrix4fv(program.uniformsCache['projectionMatrix'], false, projectionMatrix);
 
+  },
+
+  rotateView(x, y) {
+    let viewMatrix = this.get('viewMatrix');
+    GlMatrix.mat4.rotateX(viewMatrix, viewMatrix, y);
+    GlMatrix.mat4.rotateY(viewMatrix, viewMatrix, -x);
+  },
+
+  normalizedCoordinates(event) {
+    return {
+      x: event.clientX / window.innerWidth,
+      y: 1 - event.clientY / window.innerHeight
+    };
+  },
+
+  coordinatesToRotateByFromEvent(event) {
+    let dragPosition = this.get('dragPosition');
+    if (!dragPosition) { dragPosition = this.normalizedCoordinates(event); }
+    let newPosition = this.normalizedCoordinates(event);
+    let x = newPosition.x - dragPosition.x;
+    let y = newPosition.y - dragPosition.y;
+    this.set('dragPosition', newPosition);
+    return {x: x, y: y};
+  },
+
+  _mouseMoved(event) {
+    this.set('mousePosition', this.normalizedCoordinates(event));
+    this.handleUserRotation(event);
+  },
+
+  _mouseUp() {
+    this.set('dragPosition', null);
+  },
+
+  handleUserRotation(event) {
+    let shouldRotate = !!event.buttons;
+    if (!shouldRotate) { return; }
+
+    let { x, y } = this.coordinatesToRotateByFromEvent(event);
+    this.rotateView(x, y);
+    this.updateViewMatrix();
   }
 });
