@@ -1,0 +1,15 @@
+version: '2'
+services:
+  dev:
+    stdin_open: true
+    tty: true
+    container_name: webgl
+    build: .
+    working_dir: /root/workspace/app
+    command: tmuxinator start .
+    #command: bash
+    volumes:
+      - ./:/root/workspace/app
+    ports:
+      - "4200:4200"
+      - "49152:49152"

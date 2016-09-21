@@ -1,0 +1,8 @@
+name: workspace
+root: ~/workspace/app
+windows:
+  - app:
+    - vim
+  - server:
+    - ember serve
+  - bash:
