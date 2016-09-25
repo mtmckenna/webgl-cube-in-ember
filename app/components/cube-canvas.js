@@ -194,9 +194,10 @@ export default Ember.Component.extend({
 
   updateTranslationMatrix(timestamp = 0 ) {
     let translationMatrix = this.get('translationMatrix');
-    let deltaX = CUBE_AMPLITUDE * Math.cos(CUBE_PERIOD * timestamp);
-    let deltaY = CUBE_AMPLITUDE * Math.sin(CUBE_PERIOD * timestamp) + CUBE_Y_OFFSET;
-    let deltaZ = CUBE_AMPLITUDE * Math.sin(CUBE_PERIOD * timestamp);
+    let cubePeriod = this.get('cubeAttributes.period') || CUBE_PERIOD;
+    let deltaX = CUBE_AMPLITUDE * Math.cos(cubePeriod * timestamp);
+    let deltaY = CUBE_AMPLITUDE * Math.sin(cubePeriod * timestamp) + CUBE_Y_OFFSET;
+    let deltaZ = CUBE_AMPLITUDE * Math.sin(cubePeriod * timestamp);
     GlMatrix.mat4.translate(translationMatrix, GlMatrix.mat4.create(), [deltaX, deltaY, deltaZ]);
   },
 

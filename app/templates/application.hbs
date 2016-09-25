@@ -1,1 +1,8 @@
-{{cube-canvas}}
+{{cube-canvas cubeAttributes=attributes}}
+{{ attributes.period }}
+{{
+  attribute-controls
+  updateAttribute=(action "updateAttribute")
+  attributes=attributes
+}}
+
