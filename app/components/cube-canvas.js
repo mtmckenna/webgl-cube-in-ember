@@ -15,12 +15,15 @@ import {
   configureBuffer
 } from '../helpers/gl-helpers';
 
-const CAMERA_DISTANCE = 4.0;
+const CAMERA_DISTANCE = 5.0;
 const NEAR_BOUND = 1.0;
 const FAR_BOUND = 100.0;
 const FOV = 30.0;
 const ROTATION_SPEED = -0.007;
 const LIGHT_DIRECTION = [0.0, 0.0, 1.0];
+const CUBE_AMPLITUDE = 1.5;
+const CUBE_PERIOD = 0.0004;
+const CUBE_Y_OFFSET = -1.0;
 const UNIFORM_NAMES = [
   'modelMatrix',
   'viewMatrix',
@@ -35,6 +38,8 @@ export default Ember.Component.extend({
   modelMatrix: GlMatrix.mat4.create(),
   viewMatrix: GlMatrix.mat4.create(),
   projectionMatrix: GlMatrix.mat4.create(),
+  rotationMatrix: GlMatrix.mat4.create(),
+  translationMatrix: GlMatrix.mat4.create(),
   aspectRatio: 1.0,
   dragPosition: null,
   mousePosition: { x: 0, y: 0 },
@@ -178,7 +183,8 @@ export default Ember.Component.extend({
     this.animate();
   },
 
-  clearGl(gl) {
+  clearGl() {
+    let gl = this.get('gl');
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.depthFunc(gl.LEQUAL);
@@ -186,30 +192,54 @@ export default Ember.Component.extend({
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   },
 
-  rotate() {
-    let modelMatrix = this.get('modelMatrix');
-    GlMatrix.mat4.rotateX(modelMatrix, modelMatrix, ROTATION_SPEED);
-    GlMatrix.mat4.rotateY(modelMatrix, modelMatrix, ROTATION_SPEED);
-    GlMatrix.mat4.rotateZ(modelMatrix, modelMatrix, ROTATION_SPEED);
+  updateTranslationMatrix(timestamp = 0 ) {
+    let translationMatrix = this.get('translationMatrix');
+    let deltaX = CUBE_AMPLITUDE * Math.cos(CUBE_PERIOD * timestamp);
+    let deltaY = CUBE_AMPLITUDE * Math.sin(CUBE_PERIOD * timestamp) + CUBE_Y_OFFSET;
+    let deltaZ = CUBE_AMPLITUDE * Math.sin(CUBE_PERIOD * timestamp);
+    GlMatrix.mat4.translate(translationMatrix, GlMatrix.mat4.create(), [deltaX, deltaY, deltaZ]);
+  },
+
+  updateRotationMatrix() {
+    let rotationMatrix = this.get('rotationMatrix');
+    GlMatrix.mat4.rotateX(rotationMatrix, rotationMatrix, ROTATION_SPEED);
+    GlMatrix.mat4.rotateY(rotationMatrix, rotationMatrix, ROTATION_SPEED);
+    GlMatrix.mat4.rotateZ(rotationMatrix, rotationMatrix, ROTATION_SPEED);
+  },
+
+  applyTransforms() {
+    let transformMatrix = GlMatrix.mat4.create();
+    let translationMatrix = this.get('translationMatrix');
+    let rotationMatrix = this.get('rotationMatrix');
+
+    GlMatrix.mat4.multiply(transformMatrix, rotationMatrix, transformMatrix);
+    GlMatrix.mat4.multiply(transformMatrix, translationMatrix, transformMatrix);
+
+    this.set('modelMatrix', transformMatrix);
     this.updateModelMatrix();
   },
 
-  _animate() {
+  _animate(timestamp) {
     let gl = this.get('gl');
     if (!gl) { return; }
 
-    this.rotate(gl);
-    this.draw(gl);
+    this.updateTranslationMatrix(timestamp);
+    this.updateRotationMatrix();
+    this.applyTransforms();
+
+    this.draw();
     window.requestAnimationFrame(this.animate);
   },
 
-  draw(gl) {
-    this.resizeCanvas(gl);
-    this.clearGl(gl);
+  draw() {
+    let gl = this.get('gl');
+    this.resizeCanvas();
+    this.clearGl();
     gl.drawArrays(gl.TRIANGLES, 0, NUM_VERTICES);
   },
 
-  resizeCanvas(gl) {
+  resizeCanvas() {
+    let gl = this.get('gl');
     let canvas = gl.canvas;
 
     if (canvas.clientWidth === canvas.width &&
