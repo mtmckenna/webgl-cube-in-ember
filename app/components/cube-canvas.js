@@ -21,6 +21,7 @@ const FAR_BOUND = 100.0;
 const FOV = 30.0;
 const ROTATION_SPEED = -0.007;
 const LIGHT_DIRECTION = [0.0, 0.0, 1.0];
+const CUBE_SCALE = 1.0;
 const CUBE_AMPLITUDE = 1.5;
 const CUBE_PERIOD = 0.0004;
 const CUBE_Y_OFFSET = -1.0;
@@ -40,6 +41,7 @@ export default Ember.Component.extend({
   projectionMatrix: GlMatrix.mat4.create(),
   rotationMatrix: GlMatrix.mat4.create(),
   translationMatrix: GlMatrix.mat4.create(),
+  scaleMatrix: GlMatrix.mat4.create(),
   aspectRatio: 1.0,
   dragPosition: null,
   mousePosition: { x: 0, y: 0 },
@@ -192,7 +194,13 @@ export default Ember.Component.extend({
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   },
 
-  updateTranslationMatrix(timestamp = 0 ) {
+  updateScaleMatrix() {
+    let scaleMatrix = this.get('scaleMatrix');
+    let scale = this.get('cubeAttributes.scale') || CUBE_SCALE;
+    GlMatrix.mat4.scale(scaleMatrix, GlMatrix.mat4.create(), [scale, scale, scale]);
+  },
+
+  updateTranslationMatrix(timestamp = 0) {
     let translationMatrix = this.get('translationMatrix');
     let cubePeriod = this.get('cubeAttributes.period') || CUBE_PERIOD;
     let deltaX = CUBE_AMPLITUDE * Math.cos(cubePeriod * timestamp);
@@ -212,7 +220,9 @@ export default Ember.Component.extend({
     let transformMatrix = GlMatrix.mat4.create();
     let translationMatrix = this.get('translationMatrix');
     let rotationMatrix = this.get('rotationMatrix');
+    let scaleMatrix = this.get('scaleMatrix');
 
+    GlMatrix.mat4.multiply(transformMatrix, scaleMatrix, transformMatrix);
     GlMatrix.mat4.multiply(transformMatrix, rotationMatrix, transformMatrix);
     GlMatrix.mat4.multiply(transformMatrix, translationMatrix, transformMatrix);
 
@@ -226,6 +236,7 @@ export default Ember.Component.extend({
 
     this.updateTranslationMatrix(timestamp);
     this.updateRotationMatrix();
+    this.updateScaleMatrix();
     this.applyTransforms();
 
     this.draw();

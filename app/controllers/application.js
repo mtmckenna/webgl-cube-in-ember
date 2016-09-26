@@ -1,7 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Controller.extend({
-  queryParams: ['period'],
+  queryParams: ['period', 'scale'],
 
   attributesHash: Ember.computed(function() {
     let params = this.get('queryParams');
