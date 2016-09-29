@@ -9,11 +9,19 @@ body {
   background-color: rgb(235, 235, 235);
 }
 
-.cube-canvas {
-  width: 100%;
-  height: 100%;
+.cube-canvas{
+  flex: 1;
+  overflow: hidden;
 }
 
 body > .ember-view {
   height: 100%;
 }
+
+.canvas-and-controls-wrapper {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+

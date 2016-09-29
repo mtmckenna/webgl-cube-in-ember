@@ -1,8 +1,9 @@
-{{cube-canvas cubeAttributes=attributes}}
-{{ attributes.period }}
+<div class="canvas-and-controls-wrapper">
 {{
   attribute-controls
   updateAttribute=(action "updateAttribute")
   attributes=attributes
 }}
 
+{{cube-canvas cubeAttributes=attributes}}
+</div>
