@@ -8,7 +8,7 @@ import {
   NUM_VERTICES,
   TEX_COORDS,
   NORMALS
-} from './cube-data';
+} from '../3d-data/cube-data';
 
 import {
   programFromCompiledShadersAndUniformNames,
