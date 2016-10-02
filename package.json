@@ -38,6 +38,7 @@
     "ember-export-application-global": "^1.0.5",
     "ember-grab-bag-controls": "0.0.2",
     "ember-load-initializers": "^0.5.1",
+    "ember-query-params-hash": "0.0.1",
     "ember-resolver": "^2.0.3",
     "ember-stringify": "0.0.2",
     "gl-matrix": "^2.3.2",
