@@ -25,3 +25,11 @@ body > .ember-view {
   flex-direction: column;
 }
 
+.controls-toggle {
+  padding: 5px;
+  float: right;
+}
+
+.controls-toggle a:link, a:visited {
+  color: #000;
+}

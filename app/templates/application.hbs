@@ -1,9 +1,11 @@
 <div class="canvas-and-controls-wrapper">
-{{
-  grab-bag-controls
-  controls=controls
-  updateGrabBag=(action "updateGrabBag")
-}}
+{{#if (atHome currentRouteName)}}
+  {{#link-to 'controls'}}
+    {{fa-icon "angle-double-down" size="lg" class="controls-toggle"}}
+  {{/link-to}}
+{{/if}}
+
+{{liquid-outlet}}
 
 {{cube-canvas cubeAttributes=queryParamsHash}}
 </div>

@@ -1,0 +1,10 @@
+{{#link-to 'application'}}
+  {{fa-icon "angle-double-up" size="lg" class="controls-toggle"}}
+{{/link-to}}
+
+{{
+  grab-bag-controls
+  controls=appController.controls
+  updateGrabBag=(action "updateGrabBag")
+}}
+
