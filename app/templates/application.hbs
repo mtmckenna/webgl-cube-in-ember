@@ -1,11 +1,11 @@
 <div class="canvas-and-controls-wrapper">
+{{liquid-outlet}}
+
 {{#if (atHome currentRouteName)}}
   {{#link-to 'controls'}}
     {{fa-icon "angle-double-down" size="lg" class="controls-toggle"}}
   {{/link-to}}
 {{/if}}
-
-{{liquid-outlet}}
 
 {{cube-canvas cubeAttributes=queryParamsHash}}
 </div>
