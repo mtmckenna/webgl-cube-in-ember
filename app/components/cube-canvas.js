@@ -80,7 +80,6 @@ export default Ember.Component.extend({
     Ember.run.scheduleOnce('afterRender', () => {
       let gl = this.get('gl');
       this.configureGl(gl);
-      this.addEventListeners();
     });
   },
 
@@ -88,22 +87,13 @@ export default Ember.Component.extend({
     this.removeEventListeners();
   },
 
-  addEventListeners() {
-    this.configureEventListeners();
-    let canvas = this.get('element');
-    canvas.addEventListener('mousemove', this.mouseMoved, false);
-    canvas.addEventListener('mouseup', this.mouseUp, false);
+  mouseMove() {
+    this.set('mousePosition', this.normalizedCoordinates(event));
+    this.handleUserRotation(event);
   },
 
-  removeEventListeners() {
-    let canvas = this.get('element');
-    canvas.removeEventListener('mousemove', this.mouseMoved, false);
-    canvas.removeEventListener('mouseup', this.mouseUp, false);
-  },
-
-  configureEventListeners() {
-    this.set('mouseUp', this._mouseUp.bind(this));
-    this.set('mouseMoved', this._mouseMoved.bind(this));
+  mouseUp() {
+    this.set('dragPosition', null);
   },
 
   configureGl(gl) {
@@ -313,15 +303,6 @@ export default Ember.Component.extend({
     let y = newPosition.y - dragPosition.y;
     this.set('dragPosition', newPosition);
     return {x: x, y: y};
-  },
-
-  _mouseMoved(event) {
-    this.set('mousePosition', this.normalizedCoordinates(event));
-    this.handleUserRotation(event);
-  },
-
-  _mouseUp() {
-    this.set('dragPosition', null);
   },
 
   handleUserRotation(event) {
