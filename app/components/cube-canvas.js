@@ -71,6 +71,7 @@ export default Ember.Component.extend({
     );
   }),
 
+
   init() {
     this._super(...arguments);
     this.animate = this._animate.bind(this);
@@ -78,8 +79,7 @@ export default Ember.Component.extend({
 
   didInsertElement() {
     Ember.run.scheduleOnce('afterRender', () => {
-      let gl = this.get('gl');
-      this.configureGl(gl);
+      this.configureGl();
     });
   },
 
@@ -96,10 +96,11 @@ export default Ember.Component.extend({
     this.set('dragPosition', null);
   },
 
-  configureGl(gl) {
+  configureGl() {
     this.configureViewMatrix();
     this.configureProjectionMatrix();
 
+    let gl = this.get('gl');
     let program = this.get('program');
     gl.useProgram(program);
 
