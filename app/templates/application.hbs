@@ -1,11 +1,11 @@
-<div class="canvas-and-controls-wrapper">
-{{liquid-outlet}}
+<input class="scale-slider"
+       type="range"
+       min="0.0"
+       max="2.0"
+       step=".05"
+       defaultValue="1.0"
+       value={{scale}}
+       oninput={{action (action "updateScale")}}
+       />
 
-{{#if (atHome currentRouteName)}}
-  {{#link-to 'controls'}}
-    {{fa-icon "angle-double-down" size="lg" class="controls-toggle"}}
-  {{/link-to}}
-{{/if}}
-
-{{cube-canvas cubeAttributes=queryParamsHash}}
-</div>
+{{cube-canvas scale=scale}}

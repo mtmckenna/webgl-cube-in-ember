@@ -21,7 +21,6 @@ const FAR_BOUND = 100.0;
 const FOV = 30.0;
 const ROTATION_SPEED = -0.007;
 const LIGHT_DIRECTION = [0.0, 0.0, 1.0];
-const CUBE_SCALE = 1.0;
 const CUBE_AMPLITUDE = 1.5;
 const CUBE_PERIOD = 0.0004;
 const CUBE_Y_OFFSET = -1.0;
@@ -182,7 +181,7 @@ export default Ember.Component.extend({
 
   updateScaleMatrix() {
     let scaleMatrix = this.get('scaleMatrix');
-    let scale = this.get('cubeAttributes.scale') || CUBE_SCALE;
+    let scale = this.get('scale');
     GlMatrix.mat4.scale(scaleMatrix, GlMatrix.mat4.create(), [scale, scale, scale]);
   },
 
