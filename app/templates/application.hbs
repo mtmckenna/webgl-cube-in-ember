@@ -1,11 +1,13 @@
-<input class="scale-slider"
-       type="range"
-       min="0.0"
-       max="2.0"
-       step=".05"
-       defaultValue="1.0"
-       value={{scale}}
-       oninput={{action (action "updateScale")}}
-       />
-
 {{cube-canvas scale=scale}}
+
+<div class="scale-slider-wrapper">
+  <input class="scale-slider"
+         type="range"
+         min="0.0"
+         max="2.0"
+         step=".05"
+         defaultValue="1.0"
+         value={{scale}}
+         oninput={{action (action "updateScale")}}
+         />
+</div>

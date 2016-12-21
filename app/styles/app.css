@@ -22,8 +22,14 @@ body {
 
 .scale-slider {
   margin: 0;
-  padding: 5px;
+  padding: 0;
   width: 100%;
-  box-sizing: border-box;
   z-index: 1;
 }
+
+.scale-slider-wrapper {
+  width: 100%;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
