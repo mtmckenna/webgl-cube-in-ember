@@ -71,6 +71,14 @@ export default Ember.Component.extend({
     );
   }),
 
+  mouseMove() {
+    this.set('mousePosition', this.normalizedCoordinates(event));
+    this.handleUserRotation(event);
+  },
+
+  mouseUp() {
+    this.set('dragPosition', null);
+  },
 
   init() {
     this._super(...arguments);
@@ -81,15 +89,6 @@ export default Ember.Component.extend({
     Ember.run.scheduleOnce('afterRender', () => {
       this.configureGl();
     });
-  },
-
-  mouseMove() {
-    this.set('mousePosition', this.normalizedCoordinates(event));
-    this.handleUserRotation(event);
-  },
-
-  mouseUp() {
-    this.set('dragPosition', null);
   },
 
   configureGl() {
