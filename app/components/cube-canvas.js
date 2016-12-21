@@ -83,10 +83,6 @@ export default Ember.Component.extend({
     });
   },
 
-  willDestroyElement() {
-    this.removeEventListeners();
-  },
-
   mouseMove() {
     this.set('mousePosition', this.normalizedCoordinates(event));
     this.handleUserRotation(event);
@@ -280,7 +276,6 @@ export default Ember.Component.extend({
 
     this.configureProjectionMatrix();
     gl.uniformMatrix4fv(program.uniformsCache['projectionMatrix'], false, projectionMatrix);
-
   },
 
   rotateView(x, y) {
